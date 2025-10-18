@@ -122,7 +122,6 @@ const AddItem = () => {
             <h3>Scan Barcode</h3>
             <div className="scanner-container">
               <p>Point your camera at a barcode to scan</p>
-              {/* In a real implementation, you would integrate a barcode scanner library here */}
               <div style={{ 
                 width: '100%', 
                 height: '200px', 
