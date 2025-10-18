@@ -1,10 +1,11 @@
 import React from 'react';
-import { Plus, Refrigerator, ShoppingCart } from 'lucide-react';
+import { Home, Plus, Refrigerator, ShoppingCart } from 'lucide-react';
 
 const BottomNav = ({ activeTab, onTabChange }) => {
   const navItems = [
-    { id: 'add', label: 'Add Item', icon: Plus },
-    { id: 'fridge', label: 'My Fridge', icon: Refrigerator },
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'add', label: 'Add', icon: Plus },
+    { id: 'fridge', label: 'Fridge', icon: Refrigerator },
     { id: 'shopping', label: 'Shopping', icon: ShoppingCart },
   ];
 
