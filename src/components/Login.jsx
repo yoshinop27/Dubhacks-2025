@@ -1,26 +1,32 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, LogIn } from 'lucide-react';
+import { User, Lock, LogIn } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
-  const [userInfo, setUserInfo] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    location: ''
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: ''
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (userInfo.name && userInfo.email) {
-      onLogin(userInfo);
+    if (credentials.username && credentials.password) {
+      // For now, simulate login with mock user data
+      // Later this will integrate with Amazon Cognito
+      const mockUser = {
+        name: credentials.username,
+        email: `${credentials.username}@example.com`,
+        phone: '',
+        location: ''
+      };
+      onLogin(mockUser);
     } else {
-      alert('Please fill in at least your name and email');
+      alert('Please enter both username and password');
     }
   };
 
   const handleChange = (e) => {
-    setUserInfo({
-      ...userInfo,
+    setCredentials({
+      ...credentials,
       [e.target.name]: e.target.value
     });
   };
@@ -33,75 +39,45 @@ const Login = ({ onLogin }) => {
             <User size={48} />
           </div>
           <h1>Welcome to Digital Fridge</h1>
-          <p>Let's get to know you better!</p>
+          <p>Sign in to manage your fridge</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="input-group">
-            <label htmlFor="name">
+            <label htmlFor="username">
               <User size={20} />
-              Full Name *
+              Username
             </label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={userInfo.name}
+              id="username"
+              name="username"
+              value={credentials.username}
               onChange={handleChange}
-              placeholder="Enter your full name"
+              placeholder="Enter your username"
               required
             />
           </div>
 
           <div className="input-group">
-            <label htmlFor="email">
-              <Mail size={20} />
-              Email Address *
+            <label htmlFor="password">
+              <Lock size={20} />
+              Password
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={userInfo.email}
+              type="password"
+              id="password"
+              name="password"
+              value={credentials.password}
               onChange={handleChange}
-              placeholder="Enter your email"
+              placeholder="Enter your password"
               required
-            />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="phone">
-              <Phone size={20} />
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={userInfo.phone}
-              onChange={handleChange}
-              placeholder="Enter your phone number"
-            />
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="location">
-              <MapPin size={20} />
-              Location
-            </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={userInfo.location}
-              onChange={handleChange}
-              placeholder="Enter your city/location"
             />
           </div>
 
           <button type="submit" className="login-button">
             <LogIn size={20} />
-            Get Started
+            Sign In
           </button>
         </form>
       </div>
