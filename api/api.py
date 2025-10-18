@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request
 import requests
 
 app = Flask(__name__)
-FOOD_DATA_KEY = "gDFDTxNYNizmuW1L5zih2vrgZftDghemk5RRgdCe" #ABSTRACT THIS LATER
+FOOD_DATA_KEY = "DEMO_KEY" #Replace with actual key
 
 
 @app.route('/api/time')
