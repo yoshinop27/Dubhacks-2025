@@ -13,11 +13,11 @@ const AddItem = ({ onItemAdded }) => {
   const [manualForm, setManualForm] = useState({
     name: '',
     type: 'other',
-    expirationDate: '',
+    expiration_date: '',
     barcode: '',
-    nutritionFacts: [],
-    servingCount: '',
-    servingSize: ''
+    nutritionfact: [],
+    serving_count: '',
+    serving_size: ''
   });
 
   const handleBarcodeScan = async (barcode) => {
@@ -35,11 +35,11 @@ const AddItem = ({ onItemAdded }) => {
       setManualForm({
         name: food.description,
         type: food.foodCategory || 'other',
-        expirationDate: '', //NEED TO PROVIDE PAGE TO ENTER EXPIRATION DATE
+        expiration_date: '', //NEED TO PROVIDE PAGE TO ENTER EXPIRATION DATE
         barcode: barcode,
-        nutritionFacts: food.foodNutrients,
-        servingCount: '', //ENTER IN NEXT PAGE
-        servingSize: '' //ENTER IN NEXT PAGE
+        nutritionfact: food.foodNutrients,
+        serving_count: '', //ENTER IN NEXT PAGE
+        serving_size: '' //ENTER IN NEXT PAGE
       });
 
       setShowScanner(false);
@@ -57,17 +57,17 @@ const AddItem = ({ onItemAdded }) => {
     setLoading(true);
 
     try {
-      await fridgeAPI.addItem(manualForm);
+      await fridgeAPI.addItem(auth.currentUser.uid, manualForm);
       alert('Item added to fridge successfully!');
       setShowManualForm(false);
       setManualForm({
         name: '',
         type: 'other',
-        expirationDate: '',
+        expiration_date: '',
         barcode: '',
-        nutritionFacts: [],
-        servingCount: '',
-        servingSize: ''
+        nutritionfact: [],
+        serving_count: '',
+        serving_size: ''
       });
     } catch (error) {
       console.error('Error adding item:', error);
@@ -200,8 +200,8 @@ const AddItem = ({ onItemAdded }) => {
               <input
                 type="date"
                 className="input"
-                value={manualForm.expirationDate}
-                onChange={(e) => setManualForm({...manualForm, expirationDate: e.target.value})}
+                value={manualForm.expiration_date}
+                onChange={(e) => setManualForm({...manualForm, expiration_date: e.target.value})}
                 required
               />
 
@@ -209,19 +209,18 @@ const AddItem = ({ onItemAdded }) => {
                 type="number"
                 className="input"
                 placeholder="Quantity"
-                value={manualForm.servingCount}
-                onChange={(e) => setManualForm({...manualForm, servingCount: parseInt(e.target.value)})}
-                min="1"
+                value={manualForm.serving_count}
+                onChange={(e) => setManualForm({...manualForm, serving_count: parseInt(e.target.value)})}
+                min="0"
                 required
               />
 
               <input
-                type="number"
+                type="text"
                 className="input"
                 placeholder="Quantity Units"
-                value={manualForm.servingSize}
-                onChange={(e) => setManualForm({...manualForm, servingSize: parseInt(e.target.value)})}
-                min="1"
+                value={manualForm.serving_size}
+                onChange={(e) => setManualForm({...manualForm, serving_size: e.target.value})}
                 required
               />
 
