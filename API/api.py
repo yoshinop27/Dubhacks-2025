@@ -1,13 +1,17 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import boto3, json
+from datetime import date
+from botocore.exceptions import ClientError
 import requests
 
 app = Flask(__name__)
 CORS(app)
 FOOD_DATA_KEY = "ObAd8jFsex3BZhX7HtE4Ax4KApFezjSkymZdLSH9" #Replace with actual key
 
+# Initialize AWS Clients
 s3 = boto3.client('s3')
+bedrock = boto3.client(service_name='bedrock-runtime')
 BUCKET_NAME = 'userfridge'
 
 def get_user_key(user_id):
@@ -29,6 +33,48 @@ def save_data_to_s3(user_id, data):
         Body=json.dumps(data),
         ContentType='application/json'
     )
+
+def get_meal_suggestion_from_bedrock(items):
+    """
+    Generates a meal suggestion based on a list of items using AWS Bedrock.
+    This example uses the Anthropic Claude model.
+    """
+    # Filter for items that are not expired
+    today = date.today()
+    valid_items = [
+        item['name'] for item in items
+        if item.get('expiration_date') and date.fromisoformat(item['expiration_date'].split('T')[0]) >= today
+    ]
+
+    if not valid_items:
+        return "Your fridge seems to be empty or all items are expired. Add some fresh items to get a meal suggestion!"
+
+    item_list_str = ", ".join(valid_items)
+    
+    # Construct the prompt for the model
+    prompt = f"""\n\nHuman: You are a helpful chef. Based on these ingredients: {item_list_str}, suggest a simple recipe. Provide a name for the recipe, a list of ingredients, and step-by-step instructions.\n\nAssistant:"""
+
+    body = json.dumps({
+        "prompt": prompt,
+        "max_tokens_to_sample": 500,
+        "temperature": 0.7,
+    })
+
+    try:
+        modelId = 'anthropic.claude-v2'
+        response = bedrock.invoke_model(body=body, modelId=modelId, contentType='application/json', accept='application/json')
+        
+        response_body = json.loads(response.get('body').read())
+        suggestion = response_body.get('completion')
+        
+        return suggestion
+
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'AccessDeniedException':
+            print(f"ERROR: Access denied to Bedrock. Details: {e}")
+            return "Error: The application is not configured with the correct permissions to access the AI model. Please check the IAM policy."
+        else:
+            raise e
 
 # ------------------- ROUTES -------------------
 
@@ -111,6 +157,15 @@ def add_item(user_id):
         save_data_to_s3(user_id, data)
         return jsonify(new_item), 201
     return jsonify({"message": "Invalid item data"}), 400
+
+@app.route('/api/meal-suggestion/<string:user_id>', methods=['GET'])
+def get_meal_suggestion(user_id):
+    """Generate a meal suggestion for a user based on their fridge items."""
+    fridge_data = load_data_from_s3(user_id)
+    items = fridge_data.get("items", [])
+    
+    suggestion = get_meal_suggestion_from_bedrock(items)
+    return jsonify({"suggestion": suggestion})
 
 @app.route('/api/getfood', methods=['GET'])
 def get_food_info():
