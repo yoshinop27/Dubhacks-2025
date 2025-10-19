@@ -4,6 +4,7 @@ import boto3, json
 from datetime import date
 from botocore.exceptions import ClientError
 import requests
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -12,7 +13,7 @@ FOOD_DATA_KEY = "ObAd8jFsex3BZhX7HtE4Ax4KApFezjSkymZdLSH9" #Replace with actual 
 # Initialize AWS Clients
 s3 = boto3.client('s3')
 bedrock = boto3.client(service_name='bedrock-runtime')
-BUCKET_NAME = 'userfridge'
+BUCKET_NAME = 'userfridge1'
 
 def get_user_key(user_id):
     return f"{user_id}.json"
@@ -50,23 +51,27 @@ def get_meal_suggestion_from_bedrock(items):
         return "Your fridge seems to be empty or all items are expired. Add some fresh items to get a meal suggestion!"
 
     item_list_str = ", ".join(valid_items)
-    
+
     # Construct the prompt for the model
-    prompt = f"""\n\nHuman: You are a helpful chef. Based on these ingredients: {item_list_str}, suggest a simple recipe. Provide a name for the recipe, a list of ingredients, and step-by-step instructions.\n\nAssistant:"""
+    prompt = f"""You are a helpful chef. Based on these ingredients: {item_list_str}, suggest a simple recipe. Provide a name for the recipe, a list of ingredients, and step-by-step instructions."""
 
     body = json.dumps({
-        "prompt": prompt,
-        "max_tokens_to_sample": 500,
+        "messages": [{
+            "role": "user",
+            "content": prompt
+        }],
+        "max_tokens": 500,
         "temperature": 0.7,
     })
 
     try:
-        modelId = 'anthropic.claude-v2'
+        modelId = 'deepseek.v3-v1:0'
         response = bedrock.invoke_model(body=body, modelId=modelId, contentType='application/json', accept='application/json')
-        
         response_body = json.loads(response.get('body').read())
-        suggestion = response_body.get('completion')
-        
+        suggestion = response_body.get('choices')[0].get('message').get('content')
+        print(response_body)
+        print(suggestion)
+
         return suggestion
 
     except ClientError as e:
@@ -163,7 +168,7 @@ def get_meal_suggestion(user_id):
     """Generate a meal suggestion for a user based on their fridge items."""
     fridge_data = load_data_from_s3(user_id)
     items = fridge_data.get("items", [])
-    
+
     suggestion = get_meal_suggestion_from_bedrock(items)
     return jsonify({"suggestion": suggestion})
 

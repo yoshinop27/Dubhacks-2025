@@ -112,7 +112,7 @@ const AddItem = ({ onItemAdded }) => {
       const productData = response.data;
       console.log(productData);
       setSearchResult(productData.foods);
-
+      setSearchValue(null);
       setShowSearch(false);
       setShowSearchResults(true);
     } catch (error) {
