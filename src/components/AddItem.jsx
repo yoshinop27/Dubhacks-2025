@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Camera, Package, Upload, X } from 'lucide-react';
-import { barcodeAPI, fridgeAPI, uploadAPI } from '../services/api';
+import { Camera, Package, Upload, X, Search } from 'lucide-react';
+import { barcodeAPI, fridgeAPI } from '../services/api';
 import { auth } from '../services/firebase';
 
 const AddItem = ({ onItemAdded }) => {
   const [showScanner, setShowScanner] = useState(false);
   //const [showBarcodeForm, setShowBarcodeForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
-  //const { currentUser } = auth.currentUser;
   const [manualForm, setManualForm] = useState({
     name: '',
     type: 'other',
@@ -52,6 +54,26 @@ const AddItem = ({ onItemAdded }) => {
     }
   };
 
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    if (!auth.currentUser) return;
+    try {
+      const response = await barcodeAPI.search(searchValue);
+      const productData = response.data;
+      console.log(productData);
+      setSearchResult(productData.foods);
+
+      setShowSearch(false);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Error searching:', error);
+      alert('Error searching. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -77,28 +99,6 @@ const AddItem = ({ onItemAdded }) => {
     }
   };
 
-  const handleFileUpload = async (file) => {
-    setLoading(true);
-    if (!auth.currentUser) return;
-    try {
-      const response = await uploadAPI.uploadFile(file);
-      const parsedItems = response.data.items;
-
-      // Add parsed items to fridge
-      for (const item of parsedItems) {
-        await fridgeAPI.addItem(auth.currentUser.uid, item);
-      }
-
-      alert(`Successfully added ${parsedItems.length} items to your fridge!`);
-      setShowUpload(false);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Error parsing image/video. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div>
       <div className="card">
@@ -116,20 +116,20 @@ const AddItem = ({ onItemAdded }) => {
 
           <button
             className="button secondary"
+            onClick={() => setShowSearch(true)}
+            disabled={loading}
+          >
+            <Search style={{ marginRight: '0.5rem' }} />
+            Search
+          </button>
+
+          <button
+            className="button secondary"
             onClick={() => setShowManualForm(true)}
             disabled={loading}
           >
             <Package style={{ marginRight: '0.5rem' }} />
             Add Manually
-          </button>
-
-          <button
-            className="button secondary"
-            onClick={() => setShowUpload(true)}
-            disabled={loading}
-          >
-            <Upload style={{ marginRight: '0.5rem' }} />
-            Upload Image/Video
           </button>
         </div>
       </div>
@@ -165,6 +165,41 @@ const AddItem = ({ onItemAdded }) => {
                 {loading ? 'Scanning...' : 'Simulate Scan'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Search Modal */}
+      {showSearch && (
+        <div className="modal">
+          <div className="modal-content">
+            <button className="close-button" onClick={() => setShowSearch(false)}>
+              <X />
+            </button>
+            <form onSubmit={handleSearch}>
+              <input
+              type="text"
+              className="input"
+              placeholder="search by name, type, etc."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              />
+              <button type="submit" className="button" disabled={loading}>
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Search Results Modal */}
+      {showSearchResults && (
+        <div className="modal">
+          <div className="modal-content">
+            <button className="close-button" onClick={() => setShowSearchResults(false)}>
+              <X />
+            </button>
+
           </div>
         </div>
       )}
@@ -228,19 +263,6 @@ const AddItem = ({ onItemAdded }) => {
                 {loading ? 'Adding...' : 'Add to Fridge'}
               </button>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* File Upload Modal */}
-      {showUpload && (
-        <div className="modal">
-          <div className="modal-content">
-            <button className="close-button" onClick={() => setShowUpload(false)}>
-              <X />
-            </button>
-            <h3>Upload Image/Video</h3>
-            <FileUpload onFileSelect={handleFileUpload} loading={loading} />
           </div>
         </div>
       )}

@@ -34,6 +34,9 @@ export const userAPI = {
 export const barcodeAPI = {
   // Scan barcode and get product info
   scanBarcode: (barcode) => api.get(`/getfood?barcode=${barcode}`),
+
+  // Search manually
+  search: (query) => api.get(`/getfood?search=${query}`)
 };
 
 // Shopping list API

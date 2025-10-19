@@ -122,7 +122,7 @@ def get_food_info():
     page = request.args.get('page', '1')
 
   try:
-    response = requests.get(f'https://api.nal.usda.gov/fdc/v1/foods/search?query={ query }&pageSize=50&pageNumber={ page }&api_key={ FOOD_DATA_KEY }')
+    response = requests.get(f'https://api.nal.usda.gov/fdc/v1/foods/search?query={ query }&pageSize=15&pageNumber={ page }&api_key={ FOOD_DATA_KEY }')
     # Raises an HTTPError if the HTTP request returned an unsuccessful status code
     response.raise_for_status()
     data = response.json()
