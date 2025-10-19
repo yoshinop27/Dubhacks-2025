@@ -15,6 +15,13 @@ const Home = ({ onNavigate }) => {
     expired: 0
   });
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (onNavigate) {
+      onNavigate(tab);
+    }
+  };
+
   useEffect(() => {
     loadItems();
   }, []);
@@ -141,7 +148,7 @@ const Home = ({ onNavigate }) => {
               <h2>Recent Items</h2>
               <button 
                 className="view-all-btn"
-                onClick={() => onNavigate('fridge')}
+                onClick={() => handleTabChange('fridge')}
               >
                 View All
               </button>
@@ -187,7 +194,7 @@ const Home = ({ onNavigate }) => {
             <div className="actions-grid">
               <button 
                 className="action-card"
-                onClick={() => onNavigate('add')}
+                onClick={() => handleTabChange('add')}
               >
                 <div className="action-icon">
                   <Plus size={24} />
@@ -198,7 +205,7 @@ const Home = ({ onNavigate }) => {
               
               <button 
                 className="action-card"
-                onClick={() => onNavigate('fridge')}
+                onClick={() => handleTabChange('fridge')}
               >
                 <div className="action-icon">
                   <Refrigerator size={24} />
@@ -209,7 +216,7 @@ const Home = ({ onNavigate }) => {
               
               <button 
                 className="action-card"
-                onClick={() => onNavigate('shopping')}
+                onClick={() => handleTabChange('shopping')}
               >
                 <div className="action-icon">
                   <ShoppingCart size={24} />
@@ -223,7 +230,7 @@ const Home = ({ onNavigate }) => {
       </main>
       
       {/* Bottom Navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   );
 };
