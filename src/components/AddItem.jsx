@@ -1,13 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Package, X, Square } from 'lucide-react';
+import { Camera, Package, X, Search, ArrowBigRight, Leaf, Apple, Egg, Milk, Square } from 'lucide-react';
+import { barcodeAPI, fridgeAPI } from '../services/api';
 import { BarcodeFormat } from '@zxing/browser';
 import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
-import { barcodeAPI, fridgeAPI } from '../services/api';
 import { auth } from '../services/firebase';
 
 const AddItem = ({ onItemAdded }) => {
   const [showScanner, setShowScanner] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scannedCode, setScannedCode] = useState(null);
@@ -82,14 +86,59 @@ const AddItem = ({ onItemAdded }) => {
       setManualForm({
         name: food.description,
         type: food.foodCategory || 'other',
-        expiration_date: '', //NEED TO PROVIDE PAGE TO ENTER EXPIRATION DATE
+        expiration_date: '',
         barcode: barcode,
         nutritionfact: food.foodNutrients,
-        serving_count: '', //ENTER IN NEXT PAGE
-        serving_size: '' //ENTER IN NEXT PAGE
+        serving_count: '',
+        serving_size: ''
       });
 
       setShowScanner(false);
+      setShowManualForm(true);
+    } catch (error) {
+      console.error('Error selecting item', error);
+      alert('Error selecting item. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    if (!auth.currentUser) return;
+    try {
+      const response = await barcodeAPI.search(searchValue);
+      const productData = response.data;
+      console.log(productData);
+      setSearchResult(productData.foods);
+
+      setShowSearch(false);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Error searching:', error);
+      alert('Error searching. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChooseItem = async (food) => {
+    setLoading(true);
+    if (!auth.currentUser) return;
+    try {
+      setManualForm({
+        name: food.brandName + " " + food.description,
+        type: food.foodCategory || 'other',
+        expiration_date: '',
+        barcode: food.gtinUpc,
+        nutritionfact: food.foodNutrients,
+        serving_count: '',
+        serving_size: ''
+      });
+
+      setShowSearchResults(false);
+      setSearchResult([]);
       setShowManualForm(true);
     } catch (error) {
       console.error('Error scanning barcode:', error);
@@ -144,6 +193,36 @@ const AddItem = ({ onItemAdded }) => {
     }
   };
 
+  const getItemIcon = (type = 'other') => {
+    const iconProps = { size: 20 };
+    switch (type?.toLowerCase()) {
+      case 'vegetable':
+        return <Leaf {...iconProps} />;
+      case 'fruit':
+        return <Apple {...iconProps} />;
+      case 'protein':
+        return <Egg {...iconProps} />;
+      case 'dairy':
+        return <Milk {...iconProps} />;
+      default:
+        return <Package {...iconProps} />;
+    }
+  };
+
+  const getItemIconClass = (type = 'other') => {
+    switch (type?.toLowerCase()) {
+      case 'vegetable':
+        return 'vegetable';
+      case 'fruit':
+        return 'fruit';
+      case 'protein':
+        return 'protein';
+      case 'dairy':
+        return 'dairy';
+      default:
+        return 'vegetable';
+    }
+  };
 
   return (
     <div>
@@ -169,6 +248,24 @@ const AddItem = ({ onItemAdded }) => {
             <Camera size={48} />
             <span>Scan Barcode</span>
             <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Point camera at barcode</span>
+          </button>
+
+          <button
+            className="button secondary"
+            onClick={() => setShowSearch(true)}
+            disabled={loading}
+          >
+            <Search style={{ marginRight: '0.5rem' }} />
+            Search
+          </button>
+
+          <button
+            className="button secondary"
+            onClick={() => setShowSearch(true)}
+            disabled={loading}
+          >
+            <Search style={{ marginRight: '0.5rem' }} />
+            Search
           </button>
 
           <button
@@ -261,6 +358,74 @@ const AddItem = ({ onItemAdded }) => {
         </div>
       )}
 
+      {/* Manual Search Modal */}
+      {showSearch && (
+        <div className="modal">
+          <div className="modal-content">
+            <button className="close-button" onClick={() => setShowSearch(false)}>
+              <X />
+            </button>
+            <form onSubmit={handleSearch}>
+              <input
+              type="text"
+              className="input"
+              placeholder="search by name, type, etc."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              />
+              <button type="submit" className="button" disabled={loading}>
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Search Results Modal */}
+      {showSearchResults && (
+        <div className="modal">
+          <div className="modal-content">
+            <button className="close-button" onClick={() => setShowSearchResults(false)}>
+              <X />
+            </button>
+
+            {searchResult.map((item) => {
+              return (
+                <div key={item.fdcId} className="item-card">
+                  <div className={`item-icon ${getItemIconClass(item.foodCategory)}`}>
+                    {getItemIcon(item.foodCategory)}
+                  </div>
+
+                  <div className="item-details">
+                    <div className="item-name">{item.brandName + " " + item.description}</div>
+                    <div className="item-type" style={{
+                      fontSize: '0.875rem',
+                      color: '#666',
+                      textTransform: 'capitalize',
+                      marginBottom: '0.25rem'
+                    }}>
+                      {item.foodCategory}
+                    </div>
+                  </div>
+
+                  <button
+                    className="button"
+                    onClick={() => handleChooseItem(item)}
+                    style={{
+                      padding: '0.5rem',
+                      fontSize: '0.875rem',
+                      minWidth: 'auto'
+                    }}
+                  >
+                    <ArrowBigRight size={16} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Manual Form Modal */}
       {showManualForm && (
         <div className="modal">
@@ -328,6 +493,5 @@ const AddItem = ({ onItemAdded }) => {
     </div>
   );
 };
-
 
 export default AddItem;
