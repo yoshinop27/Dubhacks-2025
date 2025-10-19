@@ -12,6 +12,8 @@
     "api": "cd api && flask --app api run --no-debugger"
   },
   "dependencies": {
+    "@zxing/browser": "^0.1.5",
+    "@zxing/library": "^0.21.3",
     "axios": "^1.12.2",
     "firebase": "^12.4.0",
     "lucide-react": "^0.546.0",

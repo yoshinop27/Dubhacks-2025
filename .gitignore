@@ -273,3 +273,6 @@ yarn-error.log
 
 # testing
 /coverage
+
+# https permissions
+*.pem

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Package, X, Square } from 'lucide-react';
-import { BrowserQRCodeReader } from '@zxing/browser';
+import { BarcodeFormat } from '@zxing/browser';
+import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
 import { barcodeAPI, fridgeAPI } from '../services/api';
 import { auth } from '../services/firebase';
 
@@ -9,9 +10,8 @@ const AddItem = ({ onItemAdded }) => {
   const [showManualForm, setShowManualForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [scannedCode, setScannedCode] = useState('');
-  const videoRef = useRef(null);
-  const codeReaderRef = useRef(null);
+  const [scannedCode, setScannedCode] = useState(null);
+  //const [videoDevice, setVideoDevice] = useState(null);
   const [manualForm, setManualForm] = useState({
     name: '',
     type: 'vegetable',
@@ -21,38 +21,39 @@ const AddItem = ({ onItemAdded }) => {
     serving_count: '',
     serving_size: ''
   });
+  const codeReaderRef = React.createRef();
 
   // Scanner functions
   const startScanner = async () => {
     try {
       setScanning(true);
-      const codeReader = new BrowserQRCodeReader();
-      codeReaderRef.current = codeReader;
-      
-      const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
-      const selectedDeviceId = videoInputDevices[0]?.deviceId;
-      
-      if (!selectedDeviceId) {
-        alert('No camera found. Please ensure your device has a camera.');
-        setScanning(false);
-        return;
-      }
 
-      await codeReader.decodeFromVideoDevice(
-        selectedDeviceId,
-        videoRef.current,
-        (result, error) => {
-          if (result) {
-            const barcode = result.getText();
-            setScannedCode(barcode);
-            handleBarcodeScan(barcode);
-            stopScanner();
-          }
-          if (error && !error.message.includes('NotFoundException')) {
-            console.error('Scanner error:', error);
-          }
+      const hints = new Map();
+      const enabledFormats = [
+        // ...ALL_FORMATS_WHICH_YOU_WANT_TO_ENABLE
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+        BarcodeFormat.UPC_EAN_EXTENSION
+      ];
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, enabledFormats)
+
+      const reader = new BrowserMultiFormatReader(hints);
+      codeReaderRef.current = reader;
+      await navigator.mediaDevices.getUserMedia({ video: {width:400}});
+      const videoDevices = await reader.listVideoInputDevices();
+      var videoDevice = videoDevices[0];
+
+      reader.decodeFromVideoDevice(videoDevice.id, 'video', (result, error) => {
+        if (result) {
+          const barcode = result.getText();
+          setScannedCode(barcode);
+          handleBarcodeScan(barcode);
+          stopScanner();
         }
-      );
+        if (error && !error.message.includes('NotFoundException')) {
+          console.error('Scanner error:', error);
+        }
+      });
     } catch (error) {
       console.error('Error starting scanner:', error);
       alert('Error accessing camera. Please check permissions.');
@@ -154,7 +155,7 @@ const AddItem = ({ onItemAdded }) => {
             className="button"
             onClick={() => setShowScanner(true)}
             disabled={loading}
-            style={{ 
+            style={{
               minHeight: '30vh',
               fontSize: '1.2rem',
               padding: '2rem',
@@ -194,7 +195,8 @@ const AddItem = ({ onItemAdded }) => {
               <p>Point your camera at a barcode to scan</p>
               <div className="video-container">
                 <video
-                  ref={videoRef}
+                  id="video"
+                  //ref={videoRef}
                   style={{
                     width: '100%',
                     maxWidth: '400px',
@@ -219,7 +221,7 @@ const AddItem = ({ onItemAdded }) => {
                 </div>
               )}
               <div className="scanner-controls">
-                <button 
+                <button
                   className="button secondary"
                   onClick={stopScanner}
                   disabled={!scanning}
@@ -227,7 +229,7 @@ const AddItem = ({ onItemAdded }) => {
                   <Square size={16} />
                   Stop Scanner
                 </button>
-                <button 
+                <button
                   className="button"
                   onClick={startScanner}
                   disabled={scanning}
@@ -236,13 +238,13 @@ const AddItem = ({ onItemAdded }) => {
                   Start Scanner
                 </button>
               </div>
-              
+
               {/* Manual Product Entry Fallback */}
               <div className="manual-entry-fallback">
                 <p style={{ margin: '1rem 0', color: '#666', fontSize: '0.9rem' }}>
                   Camera not working? Add product manually:
                 </p>
-                <button 
+                <button
                   className="button"
                   onClick={() => {
                     setShowScanner(false);
