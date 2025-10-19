@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, Package, Upload, X } from 'lucide-react';
 import { barcodeAPI, fridgeAPI, uploadAPI } from '../services/api';
-import { useAuth } from './AuthContext';
+import { auth } from '../services/firebase';
 
 const AddItem = ({ onItemAdded }) => {
   const [showScanner, setShowScanner] = useState(false);
@@ -9,7 +9,7 @@ const AddItem = ({ onItemAdded }) => {
   const [showManualForm, setShowManualForm] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { currentUser } = useAuth();
+  //const { currentUser } = auth.currentUser;
   const [manualForm, setManualForm] = useState({
     name: '',
     type: 'other',
@@ -22,7 +22,7 @@ const AddItem = ({ onItemAdded }) => {
 
   const handleBarcodeScan = async (barcode) => {
     setLoading(true);
-    if (!currentUser) return;
+    if (!auth.currentUser) return;
     try {
       const response = await barcodeAPI.scanBarcode(barcode);
       const productData = response.data;
@@ -79,14 +79,14 @@ const AddItem = ({ onItemAdded }) => {
 
   const handleFileUpload = async (file) => {
     setLoading(true);
-    if (!currentUser) return;
+    if (!auth.currentUser) return;
     try {
       const response = await uploadAPI.uploadFile(file);
       const parsedItems = response.data.items;
 
       // Add parsed items to fridge
       for (const item of parsedItems) {
-        await fridgeAPI.addItem(currentUser.uid, item);
+        await fridgeAPI.addItem(auth.currentUser.uid, item);
       }
 
       alert(`Successfully added ${parsedItems.length} items to your fridge!`);

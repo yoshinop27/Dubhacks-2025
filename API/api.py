@@ -5,7 +5,7 @@ import requests
 
 app = Flask(__name__)
 CORS(app)
-FOOD_DATA_KEY = "DEMO_KEY" #Replace with actual key
+FOOD_DATA_KEY = "ObAd8jFsex3BZhX7HtE4Ax4KApFezjSkymZdLSH9" #Replace with actual key
 
 s3 = boto3.client('s3')
 BUCKET_NAME = 'userfridge'

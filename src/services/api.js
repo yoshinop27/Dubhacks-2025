@@ -1,4 +1,5 @@
 import axios from 'axios';
+//import { auth } from './firebase';
 
 const API_BASE_URL = '/api'; // Use relative path for Vite proxy
 

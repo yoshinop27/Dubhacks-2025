@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, onAuthStateChanged, GoogleAuthProvider } from "firebase/auth";
 
 // Your web app's Firebase configuration
 // Vite exposes env variables on the `import.meta.env` object
@@ -20,6 +20,12 @@ const analytics = getAnalytics(app);
 
 // Initialize and export Firebase Authentication
 export const auth = getAuth(app);
+/*var userId = auth.currentUser;
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    userId = user.uid
+  }
+})*/
 
 // Export Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
