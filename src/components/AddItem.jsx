@@ -42,25 +42,13 @@ const AddItem = ({ onItemAdded }) => {
         servingSize: '' //ENTER IN NEXT PAGE
       });
 
-
-      /*await fridgeAPI.addItem({
-        name: food.description,
-        type: food.foodCategory || 'other',
-        expirationDate: 'fake expiration', //NEED TO PROVIDE PAGE TO ENTER EXPIRATION DATE
-        barcode: barcode,
-        nutritionFacts: food.foodNutrients,
-        servingCount: '1', //ENTER IN NEXT PAGE
-        servingSize: '1 gallon' //ENTER IN NEXT PAGE
-      });*/
-
-      //alert('Item added to fridge successfully!');
       setShowScanner(false);
+      setShowManualForm(true);
     } catch (error) {
       console.error('Error scanning barcode:', error);
       alert('Error scanning barcode. Please try again.');
     } finally {
       setLoading(false);
-      setShowManualForm(true);
     }
   };
 
@@ -208,11 +196,10 @@ const AddItem = ({ onItemAdded }) => {
                 required
               />
 
-              <label for="expiration">Expiration Date</label>
+              <p>Expiration Date</p>
               <input
                 type="date"
                 className="input"
-                name="expiration"
                 value={manualForm.expirationDate}
                 onChange={(e) => setManualForm({...manualForm, expirationDate: e.target.value})}
                 required
