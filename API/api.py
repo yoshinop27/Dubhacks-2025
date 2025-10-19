@@ -1,3 +1,4 @@
+import time
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import requests
@@ -5,7 +6,6 @@ import boto3, json
 
 app = Flask(__name__)
 CORS(app)
-
 FOOD_DATA_KEY = "DEMO_KEY" #Replace with actual key
 
 s3 = boto3.client('s3')
@@ -117,6 +117,7 @@ def get_food_info():
 
   print(f'DEBUG: Sending response {data}')
   return data
+
 
 if __name__ == '__main__':
     app.run(debug=True)
