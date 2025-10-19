@@ -261,15 +261,6 @@ const AddItem = ({ onItemAdded }) => {
 
           <button
             className="button secondary"
-            onClick={() => setShowSearch(true)}
-            disabled={loading}
-          >
-            <Search style={{ marginRight: '0.5rem' }} />
-            Search
-          </button>
-
-          <button
-            className="button secondary"
             onClick={() => setShowManualForm(true)}
             disabled={loading}
             style={{ padding: '1rem' }}
