@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import boto3, json
-import time
 import requests
 
 app = Flask(__name__)
@@ -117,6 +116,7 @@ def add_item(user_id):
 def get_food_info():
   print('DEBUG: Requested barcode data')
   query = request.args.get('barcode', 'N/A')
+  page = 1
   if query == 'N/A':
     query = request.args.get('search', 'N/A')
     page = request.args.get('page', '1')
@@ -127,8 +127,10 @@ def get_food_info():
     response.raise_for_status()
     data = response.json()
   except requests.exceptions.HTTPError as http_err:
+    print(f'error http: {http_err}')
     return jsonify({'error': f'HTTP error occurred: {http_err}'}), 500
   except Exception as err:
+    print(f'error other: {err}')
     return jsonify({'error': f'Other error occurred: {err}'}), 500
 
   print(f'DEBUG: Sending response {data}')
