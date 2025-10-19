@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Refrigerator, ShoppingCart, Camera, Upload, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Refrigerator, ShoppingCart, Clock, AlertTriangle } from 'lucide-react';
 import { fridgeAPI } from '../services/api';
 import { useAuth } from './AuthContext';
+import BottomNav from './BottomNav';
 
 const Home = ({ onNavigate }) => {
   const { currentUser } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('home');
   const [stats, setStats] = useState({
     total: 0,
     expiringSoon: 0,
@@ -91,141 +93,137 @@ const Home = ({ onNavigate }) => {
   const recentItems = items.slice(0, 5);
 
   return (
-    <div className="home-container">
-      {/* Welcome Section */}
-      <div className="welcome-section">
-        <h1>Welcome back, {currentUser?.displayName || 'User'}! 👋</h1>
-        <p>Let's keep your fridge organized and reduce food waste</p>
-      </div>
+    <div className="app">
+      <main className="main-content">
+        <div className="home-container">
+          {/* Welcome Section */}
+          <div className="welcome-section">
+            <h1>Welcome back, {currentUser?.displayName || 'User'}! 👋</h1>
+            <p>Let's keep your fridge organized and reduce food waste</p>
+          </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon total">
-            <Refrigerator size={24} />
+          {/* Stats Cards */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon total">
+                <Refrigerator size={24} />
+              </div>
+              <div className="stat-content">
+                <h3>{stats.total}</h3>
+                <p>Total Items</p>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon warning">
+                <AlertTriangle size={24} />
+              </div>
+              <div className="stat-content">
+                <h3>{stats.expiringSoon}</h3>
+                <p>Expiring Soon</p>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon danger">
+                <Clock size={24} />
+              </div>
+              <div className="stat-content">
+                <h3>{stats.expired}</h3>
+                <p>Expired</p>
+              </div>
+            </div>
           </div>
-          <div className="stat-content">
-            <h3>{stats.total}</h3>
-            <p>Total Items</p>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon warning">
-            <AlertTriangle size={24} />
-          </div>
-          <div className="stat-content">
-            <h3>{stats.expiringSoon}</h3>
-            <p>Expiring Soon</p>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon danger">
-            <Clock size={24} />
-          </div>
-          <div className="stat-content">
-            <h3>{stats.expired}</h3>
-            <p>Expired</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Recent Items */}
-      <div className="recent-items">
-        <div className="section-header">
-          <h2>Recent Items</h2>
-          <button 
-            className="view-all-btn"
-            onClick={() => onNavigate('fridge')}
-          >
-            View All
-          </button>
-        </div>
-        
-        {loading ? (
-          <div className="loading-state">
-            <Clock className="animate-spin" size={32} />
-            <p>Loading your fridge...</p>
+          {/* Recent Items */}
+          <div className="recent-items">
+            <div className="section-header">
+              <h2>Recent Items</h2>
+              <button 
+                className="view-all-btn"
+                onClick={() => onNavigate('fridge')}
+              >
+                View All
+              </button>
+            </div>
+            
+            {loading ? (
+              <div className="loading-state">
+                <Clock className="animate-spin" size={32} />
+                <p>Loading your fridge...</p>
+              </div>
+            ) : recentItems.length > 0 ? (
+              <div className="items-list">
+                {recentItems.map((item) => {
+                  const expiryStatus = calculateExpiryStatus(item.expiration_date);
+                  return (
+                    <div key={item.id} className="item-preview">
+                      <div className="item-icon">
+                        {getItemIcon(item.type)}
+                      </div>
+                      <div className="item-info">
+                        <h4>{item.name}</h4>
+                        <p className="item-type">{item.type}</p>
+                      </div>
+                      <div className={`expiry-badge ${expiryStatus.urgent ? 'urgent' : ''}`}>
+                        {expiryStatus.text}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <Refrigerator size={48} />
+                <h3>Your fridge is empty</h3>
+                <p>Add some items to get started!</p>
+              </div>
+            )}
           </div>
-        ) : recentItems.length > 0 ? (
-          <div className="items-list">
-            {recentItems.map((item) => {
-              const expiryStatus = calculateExpiryStatus(item.expiration_date);
-              return (
-                <div key={item.id} className="item-preview">
-                  <div className="item-icon">
-                    {getItemIcon(item.type)}
-                  </div>
-                  <div className="item-info">
-                    <h4>{item.name}</h4>
-                    <p className="item-type">{item.type}</p>
-                  </div>
-                  <div className={`expiry-badge ${expiryStatus.urgent ? 'urgent' : ''}`}>
-                    {expiryStatus.text}
-                  </div>
+
+          {/* Quick Actions */}
+          <div className="quick-actions">
+            <h2>Quick Actions</h2>
+            <div className="actions-grid">
+              <button 
+                className="action-card"
+                onClick={() => onNavigate('add')}
+              >
+                <div className="action-icon">
+                  <Plus size={24} />
                 </div>
-              );
-            })}
+                <h3>Add Item</h3>
+                <p>Add items to your fridge</p>
+              </button>
+              
+              <button 
+                className="action-card"
+                onClick={() => onNavigate('fridge')}
+              >
+                <div className="action-icon">
+                  <Refrigerator size={24} />
+                </div>
+                <h3>My Fridge</h3>
+                <p>View all your items</p>
+              </button>
+              
+              <button 
+                className="action-card"
+                onClick={() => onNavigate('shopping')}
+              >
+                <div className="action-icon">
+                  <ShoppingCart size={24} />
+                </div>
+                <h3>Shopping List</h3>
+                <p>Manage your grocery list</p>
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="empty-state">
-            <Refrigerator size={48} />
-            <h3>Your fridge is empty</h3>
-            <p>Add some items to get started!</p>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h2>Quick Actions</h2>
-        <div className="actions-grid">
-          <button 
-            className="action-card"
-            onClick={() => onNavigate('add')}
-          >
-            <div className="action-icon">
-              <Plus size={24} />
-            </div>
-            <h3>Add Item</h3>
-            <p>Scan barcode or add manually</p>
-          </button>
-          
-          <button 
-            className="action-card"
-            onClick={() => onNavigate('fridge')}
-          >
-            <div className="action-icon">
-              <Refrigerator size={24} />
-            </div>
-            <h3>My Fridge</h3>
-            <p>View all your items</p>
-          </button>
-          
-          <button 
-            className="action-card"
-            onClick={() => onNavigate('shopping')}
-          >
-            <div className="action-icon">
-              <ShoppingCart size={24} />
-            </div>
-            <h3>Shopping List</h3>
-            <p>Manage your grocery list</p>
-          </button>
-          
-          <button 
-            className="action-card"
-            onClick={() => onNavigate('add')}
-          >
-            <div className="action-icon">
-              <Camera size={24} />
-            </div>
-            <h3>Scan Items</h3>
-            <p>Use camera to add items</p>
-          </button>
         </div>
-      </div>
+      </main>
+      
+      {/* Bottom Navigation */}
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };
