@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Package, Upload, X, Search } from 'lucide-react';
+import { Camera, Package, X, Search, ArrowBigRight, Leaf, Apple, Egg, Milk } from 'lucide-react';
 import { barcodeAPI, fridgeAPI } from '../services/api';
 import { auth } from '../services/firebase';
 
@@ -37,18 +37,18 @@ const AddItem = ({ onItemAdded }) => {
       setManualForm({
         name: food.description,
         type: food.foodCategory || 'other',
-        expiration_date: '', //NEED TO PROVIDE PAGE TO ENTER EXPIRATION DATE
+        expiration_date: '',
         barcode: barcode,
         nutritionfact: food.foodNutrients,
-        serving_count: '', //ENTER IN NEXT PAGE
-        serving_size: '' //ENTER IN NEXT PAGE
+        serving_count: '',
+        serving_size: ''
       });
 
       setShowScanner(false);
       setShowManualForm(true);
     } catch (error) {
-      console.error('Error scanning barcode:', error);
-      alert('Error scanning barcode. Please try again.');
+      console.error('Error selecting item', error);
+      alert('Error selecting item. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -69,6 +69,31 @@ const AddItem = ({ onItemAdded }) => {
     } catch (error) {
       console.error('Error searching:', error);
       alert('Error searching. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChooseItem = async (food) => {
+    setLoading(true);
+    if (!auth.currentUser) return;
+    try {
+      setManualForm({
+        name: food.brandName + " " + food.description,
+        type: food.foodCategory || 'other',
+        expiration_date: '',
+        barcode: food.gtinUpc,
+        nutritionfact: food.foodNutrients,
+        serving_count: '',
+        serving_size: ''
+      });
+
+      setShowSearchResults(false);
+      setSearchResult([]);
+      setShowManualForm(true);
+    } catch (error) {
+      console.error('Error scanning barcode:', error);
+      alert('Error scanning barcode. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -96,6 +121,37 @@ const AddItem = ({ onItemAdded }) => {
       alert('Error adding item. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getItemIcon = (type = 'other') => {
+    const iconProps = { size: 20 };
+    switch (type?.toLowerCase()) {
+      case 'vegetable':
+        return <Leaf {...iconProps} />;
+      case 'fruit':
+        return <Apple {...iconProps} />;
+      case 'protein':
+        return <Egg {...iconProps} />;
+      case 'dairy':
+        return <Milk {...iconProps} />;
+      default:
+        return <Package {...iconProps} />;
+    }
+  };
+
+  const getItemIconClass = (type = 'other') => {
+    switch (type?.toLowerCase()) {
+      case 'vegetable':
+        return 'vegetable';
+      case 'fruit':
+        return 'fruit';
+      case 'protein':
+        return 'protein';
+      case 'dairy':
+        return 'dairy';
+      default:
+        return 'vegetable';
     }
   };
 
@@ -200,6 +256,39 @@ const AddItem = ({ onItemAdded }) => {
               <X />
             </button>
 
+            {searchResult.map((item) => {
+              return (
+                <div key={item.fdcId} className="item-card">
+                  <div className={`item-icon ${getItemIconClass(item.foodCategory)}`}>
+                    {getItemIcon(item.foodCategory)}
+                  </div>
+
+                  <div className="item-details">
+                    <div className="item-name">{item.brandName + " " + item.description}</div>
+                    <div className="item-type" style={{
+                      fontSize: '0.875rem',
+                      color: '#666',
+                      textTransform: 'capitalize',
+                      marginBottom: '0.25rem'
+                    }}>
+                      {item.foodCategory}
+                    </div>
+                  </div>
+
+                  <button
+                    className="button"
+                    onClick={() => handleChooseItem(item)}
+                    style={{
+                      padding: '0.5rem',
+                      fontSize: '0.875rem',
+                      minWidth: 'auto'
+                    }}
+                  >
+                    <ArrowBigRight size={16} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -266,64 +355,6 @@ const AddItem = ({ onItemAdded }) => {
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-const FileUpload = ({ onFileSelect, loading }) => {
-  const [dragActive, setDragActive] = useState(false);
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onFileSelect(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      onFileSelect(e.target.files[0]);
-    }
-  };
-
-  return (
-    <div
-      className={`upload-area ${dragActive ? 'dragover' : ''}`}
-      onDragEnter={handleDrag}
-      onDragLeave={handleDrag}
-      onDragOver={handleDrag}
-      onDrop={handleDrop}
-    >
-      <Upload size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-      <p>Drag and drop an image or video here</p>
-      <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>
-        or click to select a file
-      </p>
-      <input
-        type="file"
-        accept="image/*,video/*"
-        onChange={handleChange}
-        style={{ display: 'none' }}
-        id="file-upload"
-      />
-      <label htmlFor="file-upload" style={{ cursor: 'pointer', marginTop: '1rem', display: 'inline-block' }}>
-        <button className="button" disabled={loading}>
-          {loading ? 'Processing...' : 'Choose File'}
-        </button>
-      </label>
     </div>
   );
 };
