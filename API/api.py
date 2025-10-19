@@ -1,8 +1,4 @@
 from flask import Flask, jsonify, request
-import boto3, json
-
-import time
-from flask import Flask, jsonify, request
 import requests
 import boto3, json
 
