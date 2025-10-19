@@ -65,11 +65,6 @@ const ShoppingList = () => {
           </pre>
         </div>
       )}
-
-      {/* You can add your shopping list functionality below */}
-      <div style={{ marginTop: '2rem', textAlign: 'center', color: '#999' }}>
-        <p>Shopping list feature coming soon!</p>
-      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Refrigerator, ShoppingCart, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, Refrigerator, CookingPot, Clock, AlertTriangle } from 'lucide-react';
 import { fridgeAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 import BottomNav from './BottomNav';
@@ -44,7 +44,7 @@ const Home = ({ onNavigate }) => {
                   <p>Total Items</p>
                 </div>
               </div>
-              
+
               <div className="stat-card">
                 <div className="stat-icon warning">
                   <AlertTriangle size={24} />
@@ -54,7 +54,7 @@ const Home = ({ onNavigate }) => {
                   <p>Expiring Soon</p>
                 </div>
               </div>
-              
+
               <div className="stat-card">
                 <div className="stat-icon danger">
                   <Clock size={24} />
@@ -70,14 +70,14 @@ const Home = ({ onNavigate }) => {
             <div className="recent-items">
               <div className="section-header">
                 <h2>Recent Items</h2>
-                <button 
+                <button
                   className="view-all-btn"
                   onClick={() => handleTabChange('fridge')}
                 >
                   View All
                 </button>
               </div>
-              
+
               {loading ? (
                 <div className="loading-state">
                   <Clock className="animate-spin" size={32} />
@@ -116,7 +116,7 @@ const Home = ({ onNavigate }) => {
             <div className="quick-actions">
               <h2>Quick Actions</h2>
               <div className="actions-grid">
-                <button 
+                <button
                   className="action-card"
                   onClick={() => handleTabChange('add')}
                 >
@@ -126,8 +126,8 @@ const Home = ({ onNavigate }) => {
                   <h3>Add Item</h3>
                   <p>Add items to your fridge</p>
                 </button>
-                
-                <button 
+
+                <button
                   className="action-card"
                   onClick={() => handleTabChange('fridge')}
                 >
@@ -137,16 +137,16 @@ const Home = ({ onNavigate }) => {
                   <h3>My Fridge</h3>
                   <p>View all your items</p>
                 </button>
-                
-                <button 
+
+                <button
                   className="action-card"
                   onClick={() => handleTabChange('shopping')}
                 >
                   <div className="action-icon">
-                    <ShoppingCart size={24} />
+                    <CookingPot size={24} />
                   </div>
-                  <h3>Shopping List</h3>
-                  <p>Manage your grocery list</p>
+                  <h3>Meal Recommender</h3>
+                  <p>Get a recipe recommendation based on the times in your fridge</p>
                 </button>
               </div>
             </div>
@@ -171,11 +171,11 @@ const Home = ({ onNavigate }) => {
     try {
       setLoading(true);
       if (!currentUser) return;
-      
+
       const response = await fridgeAPI.getItems(currentUser.uid);
       const fridgeItems = response.data.items || [];
       setItems(fridgeItems);
-      
+
       // Calculate stats
       const today = new Date();
       const expiringSoon = fridgeItems.filter(item => {
@@ -184,7 +184,7 @@ const Home = ({ onNavigate }) => {
         const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
         return diffDays <= 3 && diffDays >= 0;
       });
-      
+
       const expired = fridgeItems.filter(item => {
         if (!item.expiration_date) return false;
         const expiry = new Date(item.expiration_date);
@@ -221,12 +221,12 @@ const Home = ({ onNavigate }) => {
 
   const calculateExpiryStatus = (expiryDate) => {
     if (!expiryDate) return { text: 'No expiry', urgent: false, expired: false };
-    
+
     const today = new Date();
     const expiry = new Date(expiryDate);
     const diffTime = expiry - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) {
       return { text: 'Expired', urgent: true, expired: true };
     } else if (diffDays === 0) {
@@ -245,7 +245,7 @@ const Home = ({ onNavigate }) => {
       <main className="main-content">
         {renderCurrentPage()}
       </main>
-      
+
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
