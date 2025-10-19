@@ -1,8 +1,8 @@
-import time
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
-import requests
 import boto3, json
+import time
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -33,7 +33,7 @@ def save_data_to_s3(user_id, data):
 
 # ------------------- ROUTES -------------------
 
-@app.route('/init', methods=['POST'])
+@app.route('/api/init', methods=['POST'])
 def init_user():
     """Initialize a user with a provided userID and optional list of items."""
     body = request.json or {}
@@ -62,14 +62,14 @@ def init_user():
     return jsonify({"message": "User initialized", "user_id": user_id, "data": data}), 201
 
 
-@app.route('/items/<string:user_id>', methods=['GET'])
+@app.route('/api/items/<string:user_id>', methods=['GET'])
 def get_items(user_id):
     """Retrieve all items for a user."""
     data = load_data_from_s3(user_id)
     return jsonify(data)
 
 
-@app.route('/items/<string:user_id>/<int:item_id>', methods=['GET'])
+@app.route('/api/items/<string:user_id>/<int:item_id>', methods=['GET'])
 def get_item(user_id, item_id):
     """Retrieve a single item for a user by ID."""
     data = load_data_from_s3(user_id)
@@ -79,14 +79,30 @@ def get_item(user_id, item_id):
     return jsonify({"message": "Item not found"}), 404
 
 
-@app.route('/items/<string:user_id>', methods=['POST'])
+@app.route('/api/items/<string:user_id>/<int:item_id>', methods=['DELETE'])
+def delete_item(user_id, item_id):
+    """Delete an item from a user's fridge by ID."""
+    data = load_data_from_s3(user_id)
+    item_to_delete = next((item for item in data['items'] if item['id'] == item_id), None)
+
+    if item_to_delete:
+        data['items'] = [item for item in data['items'] if item['id'] != item_id]
+        save_data_to_s3(user_id, data)
+        return jsonify({"message": "Item deleted"}), 200
+    return jsonify({"message": "Item not found"}), 404
+
+
+@app.route('/api/items/<string:user_id>', methods=['POST'])
 def add_item(user_id):
     """Add an item to the user's fridge."""
     new_item = request.json
     data = load_data_from_s3(user_id)
 
     if new_item and 'name' in new_item and 'expiration_date' in new_item:
-        new_item['id'] = len(data['items']) + 1
+        # Use a more robust ID generation method to avoid duplicates
+        max_id = max([item['id'] for item in data['items']]) if data['items'] else 0
+        new_item['id'] = max_id + 1
+
         new_item['nutritionfact'] = new_item.get("nutritionfact", "")
         new_item['quantities'] = new_item.get("quantities", 0)
         new_item['serving_count'] = new_item.get("serving_count", 0)

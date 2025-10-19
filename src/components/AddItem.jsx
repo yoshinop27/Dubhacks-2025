@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Camera, Package, Upload, X } from 'lucide-react';
 import { barcodeAPI, fridgeAPI, uploadAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
-const AddItem = () => {
+const AddItem = ({ onItemAdded }) => {
   const [showScanner, setShowScanner] = useState(false);
   //const [showBarcodeForm, setShowBarcodeForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { currentUser } = useAuth();
   const [manualForm, setManualForm] = useState({
     name: '',
     type: 'other',
@@ -20,6 +22,7 @@ const AddItem = () => {
 
   const handleBarcodeScan = async (barcode) => {
     setLoading(true);
+    if (!currentUser) return;
     try {
       const response = await barcodeAPI.scanBarcode(barcode);
       const productData = response.data;
@@ -88,13 +91,14 @@ const AddItem = () => {
 
   const handleFileUpload = async (file) => {
     setLoading(true);
+    if (!currentUser) return;
     try {
       const response = await uploadAPI.uploadFile(file);
       const parsedItems = response.data.items;
 
       // Add parsed items to fridge
       for (const item of parsedItems) {
-        await fridgeAPI.addItem(item);
+        await fridgeAPI.addItem(currentUser.uid, item);
       }
 
       alert(`Successfully added ${parsedItems.length} items to your fridge!`);
