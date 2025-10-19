@@ -78,12 +78,12 @@ const MyFridge = () => {
 
   const calculateExpiryStatus = (expiration_date) => {
     if (!expiration_date) return { text: 'No expiry date', urgent: false };
-    
+
     const today = new Date();
     const expiry = new Date(expiration_date);
     const diffTime = expiry - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) {
       return { text: 'Expired', urgent: true };
     } else if (diffDays === 0) {
@@ -96,9 +96,9 @@ const MyFridge = () => {
       const weeks = Math.floor(diffDays / 7);
       const remainingDays = diffDays % 7;
       if (weeks > 0) {
-        return { 
-          text: `${weeks} week${weeks > 1 ? 's' : ''}${remainingDays > 0 ? ` ${remainingDays} day${remainingDays > 1 ? 's' : ''}` : ''} left`, 
-          urgent: false 
+        return {
+          text: `${weeks} week${weeks > 1 ? 's' : ''}${remainingDays > 0 ? ` ${remainingDays} day${remainingDays > 1 ? 's' : ''}` : ''} left`,
+          urgent: false
         };
       } else {
         return { text: `${diffDays} days left`, urgent: false };
@@ -146,7 +146,7 @@ const MyFridge = () => {
     <div>
       <div className="card">
         <h2 style={{ marginBottom: '1rem' }}>My Fridge ({items.length} items)</h2>
-        
+
         {items.map((item) => {
           const expiryStatus = calculateExpiryStatus(item.expiration_date);
           return (
@@ -154,12 +154,12 @@ const MyFridge = () => {
               <div className={`item-icon ${getItemIconClass(item.type)}`}>
                 {getItemIcon(item.type)}
               </div>
-              
+
               <div className="item-details">
                 <div className="item-name">{item.name}</div>
-                <div className="item-type" style={{ 
-                  fontSize: '0.875rem', 
-                  color: '#666', 
+                <div className="item-type" style={{
+                  fontSize: '0.875rem',
+                  color: '#666',
                   textTransform: 'capitalize',
                   marginBottom: '0.25rem'
                 }}>
@@ -175,12 +175,12 @@ const MyFridge = () => {
                   </div>
                 )}
               </div>
-              
+
               <button
                 className="button danger"
                 onClick={() => handleRemoveItem(item.id)}
-                style={{ 
-                  padding: '0.5rem', 
+                style={{
+                  padding: '0.5rem',
                   fontSize: '0.875rem',
                   minWidth: 'auto'
                 }}
