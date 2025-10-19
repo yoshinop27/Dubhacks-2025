@@ -3,12 +3,8 @@ import requests
 import boto3, json
 
 app = Flask(__name__)
+
 FOOD_DATA_KEY = "DEMO_KEY" #Replace with actual key
-
-
-@app.route('/api/time')
-def get_current_time():
-    return {'time': time.time()}
 
 @app.route('/api/getfood')
 def get_food_info():
