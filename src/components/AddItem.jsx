@@ -1,24 +1,72 @@
-import React, { useState } from 'react';
-import { Camera, Package, Upload, X } from 'lucide-react';
-import { barcodeAPI, fridgeAPI, uploadAPI } from '../services/api';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Package, X, Square } from 'lucide-react';
+import { BrowserQRCodeReader } from '@zxing/browser';
+import { barcodeAPI, fridgeAPI } from '../services/api';
 import { auth } from '../services/firebase';
 
 const AddItem = ({ onItemAdded }) => {
   const [showScanner, setShowScanner] = useState(false);
-  //const [showBarcodeForm, setShowBarcodeForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
   const [loading, setLoading] = useState(false);
-  //const { currentUser } = auth.currentUser;
+  const [scanning, setScanning] = useState(false);
+  const [scannedCode, setScannedCode] = useState('');
+  const videoRef = useRef(null);
+  const codeReaderRef = useRef(null);
   const [manualForm, setManualForm] = useState({
     name: '',
-    type: 'other',
+    type: 'vegetable',
     expiration_date: '',
     barcode: '',
     nutritionfact: [],
     serving_count: '',
     serving_size: ''
   });
+
+  // Scanner functions
+  const startScanner = async () => {
+    try {
+      setScanning(true);
+      const codeReader = new BrowserQRCodeReader();
+      codeReaderRef.current = codeReader;
+      
+      const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+      const selectedDeviceId = videoInputDevices[0]?.deviceId;
+      
+      if (!selectedDeviceId) {
+        alert('No camera found. Please ensure your device has a camera.');
+        setScanning(false);
+        return;
+      }
+
+      await codeReader.decodeFromVideoDevice(
+        selectedDeviceId,
+        videoRef.current,
+        (result, error) => {
+          if (result) {
+            const barcode = result.getText();
+            setScannedCode(barcode);
+            handleBarcodeScan(barcode);
+            stopScanner();
+          }
+          if (error && !error.message.includes('NotFoundException')) {
+            console.error('Scanner error:', error);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error starting scanner:', error);
+      alert('Error accessing camera. Please check permissions.');
+      setScanning(false);
+    }
+  };
+
+  const stopScanner = () => {
+    if (codeReaderRef.current) {
+      codeReaderRef.current.reset();
+      codeReaderRef.current = null;
+    }
+    setScanning(false);
+  };
 
   const handleBarcodeScan = async (barcode) => {
     setLoading(true);
@@ -29,8 +77,6 @@ const AddItem = ({ onItemAdded }) => {
       console.log(productData);
 
       const food = productData.foods[0]
-
-      // Add to fridge with product data
 
       setManualForm({
         name: food.description,
@@ -52,6 +98,23 @@ const AddItem = ({ onItemAdded }) => {
     }
   };
 
+  // Cleanup scanner when component unmounts or scanner closes
+  useEffect(() => {
+    return () => {
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showScanner && !scanning) {
+      startScanner();
+    } else if (!showScanner && scanning) {
+      stopScanner();
+    }
+  }, [showScanner]);
+
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -62,13 +125,16 @@ const AddItem = ({ onItemAdded }) => {
       setShowManualForm(false);
       setManualForm({
         name: '',
-        type: 'other',
+        type: 'vegetable',
         expiration_date: '',
         barcode: '',
         nutritionfact: [],
         serving_count: '',
         serving_size: ''
       });
+      if (onItemAdded) {
+        onItemAdded();
+      }
     } catch (error) {
       console.error('Error adding item:', error);
       alert('Error adding item. Please try again.');
@@ -77,59 +143,41 @@ const AddItem = ({ onItemAdded }) => {
     }
   };
 
-  const handleFileUpload = async (file) => {
-    setLoading(true);
-    if (!auth.currentUser) return;
-    try {
-      const response = await uploadAPI.uploadFile(file);
-      const parsedItems = response.data.items;
-
-      // Add parsed items to fridge
-      for (const item of parsedItems) {
-        await fridgeAPI.addItem(auth.currentUser.uid, item);
-      }
-
-      alert(`Successfully added ${parsedItems.length} items to your fridge!`);
-      setShowUpload(false);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Error parsing image/video. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div>
       <div className="card">
         <h2 style={{ marginBottom: '1rem', textAlign: 'center' }}>Add Items to Your Fridge</h2>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
           <button
             className="button"
             onClick={() => setShowScanner(true)}
             disabled={loading}
+            style={{ 
+              minHeight: '30vh',
+              fontSize: '1.2rem',
+              padding: '2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '1rem'
+            }}
           >
-            <Camera style={{ marginRight: '0.5rem' }} />
-            Scan Barcode
+            <Camera size={48} />
+            <span>Scan Barcode</span>
+            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Point camera at barcode</span>
           </button>
 
           <button
             className="button secondary"
             onClick={() => setShowManualForm(true)}
             disabled={loading}
+            style={{ padding: '1rem' }}
           >
             <Package style={{ marginRight: '0.5rem' }} />
             Add Manually
-          </button>
-
-          <button
-            className="button secondary"
-            onClick={() => setShowUpload(true)}
-            disabled={loading}
-          >
-            <Upload style={{ marginRight: '0.5rem' }} />
-            Upload Image/Video
           </button>
         </div>
       </div>
@@ -144,26 +192,68 @@ const AddItem = ({ onItemAdded }) => {
             <h3>Scan Barcode</h3>
             <div className="scanner-container">
               <p>Point your camera at a barcode to scan</p>
-              <div style={{
-                width: '100%',
-                height: '200px',
-                background: '#f0f0f0',
-                border: '2px dashed #ccc',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '1rem 0'
-              }}>
-                <p>Barcode Scanner Placeholder</p>
+              <div className="video-container">
+                <video
+                  ref={videoRef}
+                  style={{
+                    width: '100%',
+                    maxWidth: '400px',
+                    height: '300px',
+                    borderRadius: '12px',
+                    objectFit: 'cover',
+                    background: '#000'
+                  }}
+                  playsInline
+                  muted
+                />
+                {scanning && (
+                  <div className="scanner-overlay">
+                    <div className="scanner-frame"></div>
+                    <p className="scanner-text">Position barcode within the frame</p>
+                  </div>
+                )}
               </div>
-              <button
-                className="button"
-                onClick={() => handleBarcodeScan('00016000275287')}
-                disabled={loading}
-              >
-                {loading ? 'Scanning...' : 'Simulate Scan'}
-              </button>
+              {scannedCode && (
+                <div className="scanned-result">
+                  <p>Scanned: {scannedCode}</p>
+                </div>
+              )}
+              <div className="scanner-controls">
+                <button 
+                  className="button secondary"
+                  onClick={stopScanner}
+                  disabled={!scanning}
+                >
+                  <Square size={16} />
+                  Stop Scanner
+                </button>
+                <button 
+                  className="button"
+                  onClick={startScanner}
+                  disabled={scanning}
+                >
+                  <Camera size={16} />
+                  Start Scanner
+                </button>
+              </div>
+              
+              {/* Manual Product Entry Fallback */}
+              <div className="manual-entry-fallback">
+                <p style={{ margin: '1rem 0', color: '#666', fontSize: '0.9rem' }}>
+                  Camera not working? Add product manually:
+                </p>
+                <button 
+                  className="button"
+                  onClick={() => {
+                    setShowScanner(false);
+                    setShowManualForm(true);
+                  }}
+                  style={{ width: '100%' }}
+                >
+                  <Package size={16} />
+                  Add Product Manually
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -196,10 +286,11 @@ const AddItem = ({ onItemAdded }) => {
                 required
               />
 
-              <p>Expiration Date</p>
+              <label htmlFor="expiration">Expiration Date</label>
               <input
                 type="date"
                 className="input"
+                name="expiration"
                 value={manualForm.expiration_date}
                 onChange={(e) => setManualForm({...manualForm, expiration_date: e.target.value})}
                 required
@@ -211,7 +302,7 @@ const AddItem = ({ onItemAdded }) => {
                 placeholder="Quantity"
                 value={manualForm.serving_count}
                 onChange={(e) => setManualForm({...manualForm, serving_count: parseInt(e.target.value)})}
-                min="0"
+                min="1"
                 required
               />
 
@@ -232,78 +323,9 @@ const AddItem = ({ onItemAdded }) => {
         </div>
       )}
 
-      {/* File Upload Modal */}
-      {showUpload && (
-        <div className="modal">
-          <div className="modal-content">
-            <button className="close-button" onClick={() => setShowUpload(false)}>
-              <X />
-            </button>
-            <h3>Upload Image/Video</h3>
-            <FileUpload onFileSelect={handleFileUpload} loading={loading} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-const FileUpload = ({ onFileSelect, loading }) => {
-  const [dragActive, setDragActive] = useState(false);
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onFileSelect(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      onFileSelect(e.target.files[0]);
-    }
-  };
-
-  return (
-    <div
-      className={`upload-area ${dragActive ? 'dragover' : ''}`}
-      onDragEnter={handleDrag}
-      onDragLeave={handleDrag}
-      onDragOver={handleDrag}
-      onDrop={handleDrop}
-    >
-      <Upload size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-      <p>Drag and drop an image or video here</p>
-      <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>
-        or click to select a file
-      </p>
-      <input
-        type="file"
-        accept="image/*,video/*"
-        onChange={handleChange}
-        style={{ display: 'none' }}
-        id="file-upload"
-      />
-      <label htmlFor="file-upload" style={{ cursor: 'pointer', marginTop: '1rem', display: 'inline-block' }}>
-        <button className="button" disabled={loading}>
-          {loading ? 'Processing...' : 'Choose File'}
-        </button>
-      </label>
-    </div>
-  );
-};
 
 export default AddItem;
