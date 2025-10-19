@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = '/api'; // Use relative path for Vite proxy
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,16 +12,21 @@ const api = axios.create({
 // Fridge items API
 export const fridgeAPI = {
   // Get all items in fridge
-  getItems: () => api.get('/fridge/items'),
+  getItems: (userId) => api.get(`/items/${userId}`),
   
   // Add new item to fridge
-  addItem: (itemData) => api.post('/fridge/items', itemData),
+  addItem: (userId, itemData) => api.post(`/items/${userId}`, itemData),
   
   // Remove item from fridge
-  removeItem: (itemId) => api.delete(`/fridge/items/${itemId}`),
+  removeItem: (userId, itemId) => api.delete(`/items/${userId}/${itemId}`),
   
   // Update item expiry
-  updateItem: (itemId, data) => api.put(`/fridge/items/${itemId}`, data),
+  updateItem: (userId, itemId, data) => api.put(`/items/${userId}/${itemId}`, data),
+};
+
+// User API
+export const userAPI = {
+  initialize: (userId) => api.post('/init', { user_id: userId }),
 };
 
 // Barcode scanning API

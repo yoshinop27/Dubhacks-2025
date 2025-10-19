@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from './components/AuthContext';
 import Login from './components/Login'; // Assuming you have this component
 import Home from './components/Home';   // Assuming you have this component
 import './App.css';

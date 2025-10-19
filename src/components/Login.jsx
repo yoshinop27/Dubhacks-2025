@@ -1,6 +1,6 @@
 import React from 'react';
 import { IceCream } from 'lucide-react';
-import { useAuth } from '../AuthContext';
+import { useAuth } from './AuthContext';
 
 function Login() {
   const { signinWithGoogle } = useAuth();

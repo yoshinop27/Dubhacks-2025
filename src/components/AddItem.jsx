@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Camera, Package, Upload, X } from 'lucide-react';
 import { barcodeAPI, fridgeAPI, uploadAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
-const AddItem = () => {
+const AddItem = ({ onItemAdded }) => {
   const [showScanner, setShowScanner] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { currentUser } = useAuth();
   const [manualForm, setManualForm] = useState({
     name: '',
     type: 'vegetable',
@@ -16,21 +18,21 @@ const AddItem = () => {
 
   const handleBarcodeScan = async (barcode) => {
     setLoading(true);
+    if (!currentUser) return;
     try {
       const response = await barcodeAPI.scanBarcode(barcode);
       const productData = response.data;
       
       // Add to fridge with product data
-      await fridgeAPI.addItem({
+      await fridgeAPI.addItem(currentUser.uid, {
         name: productData.name,
         type: productData.type || 'other',
-        expiryDate: productData.expiryDate,
+        expiration_date: productData.expiryDate, // Match backend field
         barcode: barcode,
-        productInfo: productData
+        productInfo: productData,
       });
       
-      alert('Item added to fridge successfully!');
-      setShowScanner(false);
+      onItemAdded(); // Go back to the fridge view
     } catch (error) {
       console.error('Error scanning barcode:', error);
       alert('Error scanning barcode. Please try again.');
@@ -42,12 +44,16 @@ const AddItem = () => {
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    if (!currentUser) return;
     
     try {
-      await fridgeAPI.addItem(manualForm);
-      alert('Item added to fridge successfully!');
-      setShowManualForm(false);
-      setManualForm({ name: '', type: 'vegetable', expiryDate: '', quantity: 1 });
+      await fridgeAPI.addItem(currentUser.uid, {
+        name: manualForm.name,
+        type: manualForm.type,
+        expiration_date: manualForm.expiryDate, // Match backend field
+        quantities: manualForm.quantity,
+      });
+      onItemAdded(); // Go back to the fridge view
     } catch (error) {
       console.error('Error adding item:', error);
       alert('Error adding item. Please try again.');
@@ -58,17 +64,17 @@ const AddItem = () => {
 
   const handleFileUpload = async (file) => {
     setLoading(true);
+    if (!currentUser) return;
     try {
       const response = await uploadAPI.uploadFile(file);
       const parsedItems = response.data.items;
       
       // Add parsed items to fridge
       for (const item of parsedItems) {
-        await fridgeAPI.addItem(item);
+        await fridgeAPI.addItem(currentUser.uid, item);
       }
       
-      alert(`Successfully added ${parsedItems.length} items to your fridge!`);
-      setShowUpload(false);
+      onItemAdded(); // Go back to the fridge view
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Error parsing image/video. Please try again.');

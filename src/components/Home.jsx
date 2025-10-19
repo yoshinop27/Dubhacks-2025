@@ -1,12 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Refrigerator, LogOut } from 'lucide-react';
-import { useAuth } from '../AuthContext';
+import { useAuth } from './AuthContext';
+import BottomNav from './BottomNav';
+import MyFridge from './MyFridge';
+import AddItem from './AddItem';
 
 function Home() {
   const { currentUser, signout } = useAuth();
+  const [activeView, setActiveView] = useState('fridge');
+
+  const renderActiveView = () => {
+    const refreshFridge = () => setActiveView('fridge');
+
+    switch (activeView) {
+      case 'fridge':
+        return <MyFridge />;
+      case 'home':
+        return <div className="card"><p>Home Dashboard Coming Soon!</p></div>;
+      case 'add':
+        return <AddItem onItemAdded={refreshFridge} />;
+      default:
+        return <MyFridge />;
+    }
+  };
 
   return (
-    <div className="home-container">
+    // The "app" class ensures the header, main, and nav layout works correctly
+    <div className="app">
       <header className="header">
         <div className="header-content">
           <div className="header-left">
@@ -23,9 +43,8 @@ function Home() {
           </div>
         </div>
       </header>
-      <main className="main-content">
-        <p>Welcome to your Digital Fridge!</p>
-      </main>
+      <main className="main-content">{renderActiveView()}</main>
+      <BottomNav activeTab={activeView} onTabChange={setActiveView} />
     </div>
   );
 }

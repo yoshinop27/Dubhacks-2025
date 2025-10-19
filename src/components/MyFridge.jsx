@@ -1,28 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Leaf, Egg, Milk, Apple, Package, Trash2, Clock } from 'lucide-react';
 import { fridgeAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
 const MyFridge = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { currentUser } = useAuth();
 
-  useEffect(() => {
-    loadItems();
-  }, []);
-
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
+    if (!currentUser) return;
     try {
       setLoading(true);
-      const response = await fridgeAPI.getItems();
-      setItems(response.data);
+      setError(null); // Clear previous errors
+      const response = await fridgeAPI.getItems(currentUser.uid);
+      // Ensure we are setting the array of items from the response object
+      setItems(response.data.items || []);
     } catch (error) {
       console.error('Error loading items:', error);
-      setError('Failed to load fridge items');
+      setError('Failed to load fridge items. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadItems();
+    }
+  }, [currentUser, loadItems]);
 
   const handleRemoveItem = async (itemId) => {
     if (!window.confirm('Are you sure you want to remove this item?')) {
@@ -30,8 +37,8 @@ const MyFridge = () => {
     }
 
     try {
-      await fridgeAPI.removeItem(itemId);
-      setItems(items.filter(item => item.id !== itemId));
+      await fridgeAPI.removeItem(currentUser.uid, itemId);
+      setItems(prevItems => prevItems.filter(item => item.id !== itemId));
     } catch (error) {
       console.error('Error removing item:', error);
       alert('Failed to remove item');
@@ -69,11 +76,11 @@ const MyFridge = () => {
     }
   };
 
-  const calculateExpiryStatus = (expiryDate) => {
-    if (!expiryDate) return { text: 'No expiry date', urgent: false };
+  const calculateExpiryStatus = (expiration_date) => {
+    if (!expiration_date) return { text: 'No expiry date', urgent: false };
     
     const today = new Date();
-    const expiry = new Date(expiryDate);
+    const expiry = new Date(expiration_date);
     const diffTime = expiry - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
@@ -141,7 +148,7 @@ const MyFridge = () => {
         <h2 style={{ marginBottom: '1rem' }}>My Fridge ({items.length} items)</h2>
         
         {items.map((item) => {
-          const expiryStatus = calculateExpiryStatus(item.expiryDate);
+          const expiryStatus = calculateExpiryStatus(item.expiration_date);
           return (
             <div key={item.id} className="item-card">
               <div className={`item-icon ${getItemIconClass(item.type)}`}>
@@ -161,9 +168,9 @@ const MyFridge = () => {
                 <div className={`item-expiry ${expiryStatus.urgent ? 'expiring-soon' : ''}`}>
                   {expiryStatus.text}
                 </div>
-                {item.quantity && item.quantity > 1 && (
+                {item.quantities && item.quantities > 1 && (
                   <div style={{ fontSize: '0.75rem', color: '#666' }}>
-                    Qty: {item.quantity}
+                    Qty: {item.quantities}
                   </div>
                 )}
               </div>
