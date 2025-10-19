@@ -71,7 +71,7 @@ export const uploadAPI = {
 // Meal prep recommendations API
 export const mealPrepAPI = {
   // Get meal suggestions based on fridge contents
-  getRecommendations: () => api.get('/meal-prep/recommendations'),
+  getMealSuggestion: (userId) => api.get(`/meal-suggestion/${userId}`),
 
   // Get specific meal suggestions for items
   getSuggestionsForItems: (itemIds) => api.post('/meal-prep/suggestions', { itemIds }),
