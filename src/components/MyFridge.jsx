@@ -45,9 +45,9 @@ const MyFridge = () => {
     }
   };
 
-  const getItemIcon = (type) => {
+  const getItemIcon = (type = 'other') => {
     const iconProps = { size: 20 };
-    switch (type.toLowerCase()) {
+    switch (type?.toLowerCase()) {
       case 'vegetable':
         return <Leaf {...iconProps} />;
       case 'fruit':
@@ -61,8 +61,8 @@ const MyFridge = () => {
     }
   };
 
-  const getItemIconClass = (type) => {
-    switch (type.toLowerCase()) {
+  const getItemIconClass = (type = 'other') => {
+    switch (type?.toLowerCase()) {
       case 'vegetable':
         return 'vegetable';
       case 'fruit':

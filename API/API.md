@@ -60,6 +60,7 @@ Response:
         "nutritionfact": "Rich in protein",
         "quantities": 12,
         "serving_count": 6,
+        "nutritionfact": "Rich in protein", "quantities": 12,
         "serving_size": "2 eggs"
       }
     ]
@@ -102,6 +103,7 @@ Response:
       "nutritionfact": "Rich in protein",
       "quantities": 12,
       "serving_count": 6,
+      "nutritionfact": "Rich in protein", "quantities": 12,
       "serving_size": "2 eggs"
     }
   ]
