@@ -168,9 +168,10 @@ const MyFridge = () => {
                 <div className={`item-expiry ${expiryStatus.urgent ? 'expiring-soon' : ''}`}>
                   {expiryStatus.text}
                 </div>
-                {item.quantities && (
+                {item.serving_count > 0 && (
                   <div style={{ fontSize: '0.75rem', color: '#666' }}>
-                    Qty: {item.quantities}
+                    Servings: {item.serving_count}
+                    {item.serving_size && ` (${item.serving_size})`}
                   </div>
                 )}
               </div>
