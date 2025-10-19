@@ -26,7 +26,7 @@ export const fridgeAPI = {
 
 // User API
 export const userAPI = {
-  initialize: (userId) => api.post('/init', { user_id: userId }),
+  initialize: (userId) => api.post('/fridge/init', { user_id: userId }),
 };
 
 // Barcode scanning API
